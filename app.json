@@ -22,7 +22,13 @@
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#1A1A2E"
       },
-      "package": "app.rork.yic9xbw0esfk7pa665r1c"
+      "package": "app.rork.yic9xbw0esfk7pa665r1c",
+      "versionCode": 2,
+      "permissions": [
+        "INTERNET",
+        "VIBRATE",
+        "com.android.vending.BILLING"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -39,6 +45,15 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {
+        "origin": "https://rork.com/"
+      },
+      "eas": {
+        "projectId": "bb17fdb1-b8e2-4c8f-b344-3f9ca58cd5cc"
+      }
+    },
+    "owner": "sameer447"
   }
 }

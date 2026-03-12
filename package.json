@@ -4,8 +4,8 @@
   "version": "1.0.0",
   "scripts": {
     "start": "expo start",
-    "start-web": "bunx rork start -p yic9xbw0esfk7pa665r1c --web --tunnel",
-    "start-web-dev": "DEBUG=expo* bunx rork start -p yic9xbw0esfk7pa665r1c --web --tunnel",
+    "start-web": "expo start --web",
+    "start-web-dev": "expo start --web --dev-client",
     "lint": "expo lint"
   },
   "dependencies": {
@@ -55,6 +55,5 @@
     "eslint-config-expo": "~10.0.0",
     "typescript": "~5.9.2"
   },
-  "packageManager": "npm@11.6.0",
   "private": true
 }

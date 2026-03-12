@@ -48,3 +48,10 @@ yarn.lock
 core
 node_modules
 .expo
+
+# website
+website/node_modules
+website/dist
+website/out
+website/.next
+website/.vercel

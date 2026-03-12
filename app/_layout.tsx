@@ -3,11 +3,12 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import React, { useEffect } from 'react';
 import { StatusBar } from 'expo-status-bar';
-import { View, StyleSheet, Platform } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { GameProvider } from '@/context/GameContext';
 import { COLORS } from '@/constants/game';
+import { useAndroidSystemUiGuard } from '@/hooks/useAndroidSystemUiGuard';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -44,16 +45,10 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
+    useAndroidSystemUiGuard();
+
     useEffect(() => {
         void SplashScreen.hideAsync();
-        if (Platform.OS === 'android') {
-            try {
-                const NavigationBar = require('expo-navigation-bar');
-                void NavigationBar.setButtonStyleAsync('light');
-            } catch {
-                // expo-navigation-bar not available in Expo Go
-            }
-        }
     }, []);
 
     return (

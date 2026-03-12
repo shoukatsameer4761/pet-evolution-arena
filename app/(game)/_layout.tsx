@@ -7,7 +7,8 @@ import { COLORS } from '@/constants/game';
 
 export default function GameLayout() {
     const insets = useSafeAreaInsets();
-    const tabBarHeight = Platform.OS === 'android' ? 64 : 56 + insets.bottom;
+    const bottomInset = Platform.OS === 'android' ? Math.max(insets.bottom, 10) : insets.bottom;
+    const tabBarHeight = 56 + bottomInset;
 
     return (
         <Tabs
@@ -15,14 +16,16 @@ export default function GameLayout() {
                 tabBarActiveTintColor: COLORS.primary,
                 tabBarInactiveTintColor: COLORS.textMuted,
                 headerShown: false,
+                tabBarHideOnKeyboard: true,
                 tabBarStyle: {
                     backgroundColor: COLORS.surface,
                     borderTopWidth: 0,
                     borderTopColor: COLORS.surfaceLight,
                     elevation: 0,
                     height: tabBarHeight,
-                    paddingBottom: Platform.OS === 'android' ? 8 : insets.bottom,
+                    paddingBottom: bottomInset,
                     paddingTop: 6,
+                    position: 'absolute',
                 },
                 tabBarItemStyle: styles.tabBarItem,
                 tabBarLabelStyle: styles.tabBarLabel,

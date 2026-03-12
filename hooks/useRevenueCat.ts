@@ -39,6 +39,36 @@ export function configureRevenueCat() {
   }
 }
 
+// Dev-mode gem pack definitions for testing in Expo Go
+export interface DevGemPack {
+  id: string;
+  amount: number;
+  price: string;
+  bonus: number;
+  isSubscription: boolean;
+}
+
+export const DEV_GEM_PACKS: DevGemPack[] = [
+  { id: 'gems_small', amount: 50, price: '$0.99', bonus: 0, isSubscription: false },
+  { id: 'gems_medium', amount: 150, price: '$2.99', bonus: 20, isSubscription: false },
+  { id: 'gems_large', amount: 500, price: '$7.99', bonus: 100, isSubscription: false },
+  { id: 'gems_mega', amount: 1200, price: '$14.99', bonus: 300, isSubscription: false },
+  { id: 'vip_monthly', amount: 100, price: '$9.99/mo', bonus: 0, isSubscription: true },
+];
+
+export const DAILY_DEAL = {
+  id: 'daily_special',
+  coins: 500,
+  gems: 50,
+  food: 100,
+  price: '$4.99',
+  originalPrice: '$9.99',
+};
+
+export function useIsDevMode() {
+  return isExpoGo || !isConfigured;
+}
+
 export function useOfferings() {
   return useQuery({
     queryKey: ['revenuecat', 'offerings'],

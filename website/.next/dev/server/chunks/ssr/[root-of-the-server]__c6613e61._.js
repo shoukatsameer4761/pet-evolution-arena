@@ -434,11 +434,11 @@ const metadata = {
         }
     ],
     creator: "Pet Evolution Arena",
-    metadataBase: new URL("https://petevolutionarena.com"),
+    metadataBase: new URL("https://pet-evolution-arena.vercel.app"),
     openGraph: {
         title: "Pet Evolution Arena — Evolve, Battle & Conquer",
         description: "Hatch mysterious eggs, evolve powerful creatures, and battle your way to legendary status.",
-        url: "https://petevolutionarena.com",
+        url: "https://pet-evolution-arena.vercel.app",
         siteName: "Pet Evolution Arena",
         images: [
             {

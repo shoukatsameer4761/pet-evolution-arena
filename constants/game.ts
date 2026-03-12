@@ -111,11 +111,12 @@ export const ABILITIES: Record<string, { name: string; damage: number; cooldown:
 };
 
 export const SHOP_ITEMS = [
-  { id: 'food_pack', name: 'Food Pack', description: '50 food items', price: 100, type: 'food', amount: 50 },
-  { id: 'xp_boost', name: 'XP Boost', description: 'Double XP for 1 hour', price: 200, type: 'boost', duration: 3600 },
-  { id: 'legendary_skin', name: 'Legendary Skin', description: 'Exclusive skin for your pet', price: 500, type: 'skin' },
-  { id: 'revive_token', name: 'Revive Token', description: 'Continue after battle defeat', price: 150, type: 'token' },
-  { id: 'coin_pack', name: 'Coin Pack', description: '1000 coins', price: 50, type: 'coins', amount: 1000 },
+  { id: 'food_small', name: 'Snack Pack', description: '25 food items', price: 100, type: 'food' as const, amount: 25 },
+  { id: 'food_large', name: 'Feast Bundle', description: '100 food items', price: 350, type: 'food' as const, amount: 100 },
+  { id: 'xp_boost', name: 'XP Boost', description: 'Double XP for 1 hour', price: 300, type: 'boost' as const, duration: 3600000 },
+  { id: 'xp_boost_long', name: 'Mega XP Boost', description: 'Double XP for 4 hours', price: 1000, type: 'boost' as const, duration: 14400000 },
+  { id: 'revive_token', name: 'Revive Token', description: 'Continue after battle defeat', price: 200, type: 'token' as const },
+  { id: 'revive_bundle', name: 'Revive Bundle x5', description: '5 revive tokens', price: 800, type: 'token' as const, amount: 5 },
 ];
 
 export const LEADERBOARD_ENTRIES = [

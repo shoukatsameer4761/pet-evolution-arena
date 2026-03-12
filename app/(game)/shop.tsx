@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Alert, Linking } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import {
     Coins,
@@ -9,6 +9,7 @@ import {
     Sparkles,
     Crown,
     Package,
+    RotateCcw,
 } from 'lucide-react-native';
 
 import * as Haptics from 'expo-haptics';
@@ -18,7 +19,12 @@ import { COLORS, SHOP_ITEMS } from '@/constants/game';
 import {
     useOfferings,
     usePurchasePackage,
+    useRestorePurchases,
     useRevenueCatSetup,
+    useIsDevMode,
+    DEV_GEM_PACKS,
+    DAILY_DEAL,
+    type DevGemPack,
 } from '@/hooks/useRevenueCat';
 
 export default function ShopScreen() {
@@ -28,6 +34,8 @@ export default function ShopScreen() {
     useRevenueCatSetup();
     const { data: offerings } = useOfferings();
     const { mutate: purchasePackage } = usePurchasePackage();
+    const { mutate: restorePurchases, isPending: isRestoring } = useRestorePurchases();
+    const isDevMode = useIsDevMode();
 
     const handlePurchase = (item: typeof SHOP_ITEMS[0]) => {
         if (state.coins < item.price) {
@@ -51,9 +59,6 @@ export default function ShopScreen() {
                             case 'food':
                                 addFood(item.amount || 0);
                                 break;
-                            case 'coins':
-                                addCoins(item.amount || 0);
-                                break;
                             case 'boost':
                                 activateXpBoost(2, item.duration || 3600000);
                                 break;
@@ -66,7 +71,37 @@ export default function ShopScreen() {
         );
     };
 
-    const handleGemPurchase = (pack: typeof gemPacks[0]) => {
+    const handleGemPurchase = (pack: { id: string; amount: number; price: string; bonus: number; isSubscription: boolean; package?: any }) => {
+        if (isDevMode) {
+            // Simulated purchase for development/testing
+            Alert.alert(
+                pack.isSubscription ? 'Subscribe to VIP' : 'Buy Gems',
+                `${pack.isSubscription ? 'VIP Membership' : `${pack.amount}${pack.bonus > 0 ? ` + ${pack.bonus} bonus` : ''} gems`} for ${pack.price}\n\n(Dev Mode: purchase will be simulated)`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Simulate Purchase',
+                        onPress: () => {
+                            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            if (pack.isSubscription) {
+                                setVipStatus(true, new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString());
+                                Alert.alert('VIP Activated!', 'Welcome to VIP! You now have daily gems, exclusive skins, and 2x XP boost!');
+                            } else {
+                                addGems(pack.amount + pack.bonus);
+                                Alert.alert('Purchase Successful!', `You received ${pack.amount + pack.bonus} gems!`);
+                            }
+                        },
+                    },
+                ]
+            );
+            return;
+        }
+
+        if (!pack.package) {
+            Alert.alert('Unavailable', 'This purchase is not available right now.');
+            return;
+        }
+
         if (pack.isSubscription) {
             purchasePackage(pack.package, {
                 onSuccess: (result) => {
@@ -87,6 +122,48 @@ export default function ShopScreen() {
                     Alert.alert('Purchase Successful!', `You received ${pack.amount + pack.bonus} gems!`);
                 },
             });
+        }
+    };
+
+    const handleDailyDeal = () => {
+        if (isDevMode) {
+            Alert.alert(
+                'Daily Special',
+                `${DAILY_DEAL.coins} Coins + ${DAILY_DEAL.gems} Gems + ${DAILY_DEAL.food} Food for ${DAILY_DEAL.price}\n\n(Dev Mode: purchase will be simulated)`,
+                [
+                    { text: 'Cancel', style: 'cancel' },
+                    {
+                        text: 'Simulate Purchase',
+                        onPress: () => {
+                            void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                            addCoins(DAILY_DEAL.coins);
+                            addGems(DAILY_DEAL.gems);
+                            addFood(DAILY_DEAL.food);
+                            Alert.alert('Purchase Successful!', `You received ${DAILY_DEAL.coins} coins, ${DAILY_DEAL.gems} gems, and ${DAILY_DEAL.food} food!`);
+                        },
+                    },
+                ]
+            );
+            return;
+        }
+
+        // In production, find the daily deal package from RevenueCat offerings
+        const dailyPkg = offerings?.current?.availablePackages.find(
+            pkg => pkg.identifier.toLowerCase().includes('daily') || pkg.identifier.toLowerCase().includes('special')
+        );
+
+        if (dailyPkg) {
+            purchasePackage(dailyPkg, {
+                onSuccess: () => {
+                    addCoins(DAILY_DEAL.coins);
+                    addGems(DAILY_DEAL.gems);
+                    addFood(DAILY_DEAL.food);
+                    void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+                    Alert.alert('Purchase Successful!', `You received ${DAILY_DEAL.coins} coins, ${DAILY_DEAL.gems} gems, and ${DAILY_DEAL.food} food!`);
+                },
+            });
+        } else {
+            Alert.alert('Unavailable', 'Daily Special is not available right now. Please try again later.');
         }
     };
 
@@ -122,7 +199,7 @@ export default function ShopScreen() {
         );
     };
 
-    const gemPacks = offerings?.current?.availablePackages.map(pkg => ({
+    const liveGemPacks = offerings?.current?.availablePackages.map(pkg => ({
         id: pkg.identifier,
         package: pkg,
         amount: parseInt(pkg.identifier.includes('monthly') ? '100' : pkg.identifier.includes('yearly') ? '1200' : '100'),
@@ -131,11 +208,13 @@ export default function ShopScreen() {
         isSubscription: pkg.packageType === 'MONTHLY' || pkg.packageType === 'ANNUAL',
     })) || [];
 
+    const gemPacks = liveGemPacks.length > 0 ? liveGemPacks : (isDevMode ? DEV_GEM_PACKS : []);
+
     const skins = [
-        { id: 'golden', name: 'Golden', color: '#FFD700', price: 500, unlocked: state.unlockedSkins.includes('golden') },
-        { id: 'crystal', name: 'Crystal', color: '#4ECDC4', price: 750, unlocked: state.unlockedSkins.includes('crystal') },
-        { id: 'shadow', name: 'Shadow', color: '#6C5CE7', price: 1000, unlocked: state.unlockedSkins.includes('shadow') },
-        { id: 'rainbow', name: 'Rainbow', color: '#FF6B6B', price: 1500, unlocked: state.unlockedSkins.includes('rainbow') },
+        { id: 'golden', name: 'Golden', color: '#FFD700', price: 500, unlocked: state.isVip || state.unlockedSkins.includes('golden') },
+        { id: 'crystal', name: 'Crystal', color: '#4ECDC4', price: 750, unlocked: state.isVip || state.unlockedSkins.includes('crystal') },
+        { id: 'shadow', name: 'Shadow', color: '#6C5CE7', price: 1000, unlocked: state.isVip || state.unlockedSkins.includes('shadow') },
+        { id: 'rainbow', name: 'Rainbow', color: '#FF6B6B', price: 1500, unlocked: state.isVip || state.unlockedSkins.includes('rainbow') },
     ];
 
     return (
@@ -179,8 +258,6 @@ export default function ShopScreen() {
                             <View style={styles.itemIcon}>
                                 {item.type === 'food' && <Heart size={32} color={COLORS.primary} />}
                                 {item.type === 'boost' && <Zap size={32} color={COLORS.secondary} />}
-                                {item.type === 'skin' && <Sparkles size={32} color={COLORS.accent} />}
-                                {item.type === 'coins' && <Coins size={32} color={COLORS.accent} />}
                                 {item.type === 'token' && <Crown size={32} color={COLORS.warning} />}
                             </View>
                             <Text style={styles.itemName}>{item.name}</Text>
@@ -201,6 +278,21 @@ export default function ShopScreen() {
                         <Text style={styles.gemsBannerTitle}>Get More Gems!</Text>
                         <Text style={styles.gemsBannerDesc}>Premium currency for exclusive items</Text>
                     </View>
+
+                    {gemPacks.length === 0 && (
+                        <View style={styles.gemPackUnavailable}>
+                            <Text style={styles.gemPackUnavailableTitle}>Store Unavailable</Text>
+                            <Text style={styles.gemPackUnavailableDesc}>
+                                Gem packs could not be loaded. Check your internet connection and try again.
+                            </Text>
+                        </View>
+                    )}
+
+                    {isDevMode && gemPacks.length > 0 && (
+                        <View style={styles.devBanner}>
+                            <Text style={styles.devBannerText}>🛠 Dev Mode — purchases are simulated</Text>
+                        </View>
+                    )}
 
                     {gemPacks.map((pack) => (
                         <Pressable
@@ -228,13 +320,44 @@ export default function ShopScreen() {
                     <View style={styles.vipCard}>
                         <Crown size={32} color={COLORS.accent} />
                         <View style={styles.vipInfo}>
-                            <Text style={styles.vipTitle}>VIP Membership</Text>
+                            <Text style={styles.vipTitle}>
+                                {state.isVip ? 'VIP Active ✓' : 'VIP Membership'}
+                            </Text>
                             <Text style={styles.vipDesc}>Daily gems, exclusive skins, 2x XP</Text>
                         </View>
-                        <Pressable style={styles.vipButton}>
-                            <Text style={styles.vipButtonText}>$9.99/mo</Text>
-                        </Pressable>
+                        {!state.isVip && (
+                            <Pressable
+                                style={styles.vipButton}
+                                onPress={() => {
+                                    const vipPack = gemPacks.find(p => p.isSubscription);
+                                    if (vipPack) {
+                                        handleGemPurchase(vipPack);
+                                    } else {
+                                        Alert.alert('Unavailable', 'VIP subscription is not available right now. Please try again later.');
+                                    }
+                                }}
+                            >
+                                <Text style={styles.vipButtonText}>Subscribe</Text>
+                            </Pressable>
+                        )}
                     </View>
+
+                    <Pressable
+                        style={styles.restoreButton}
+                        onPress={() => {
+                            if (isDevMode) {
+                                Alert.alert('Restored', 'Purchases restored! (Dev Mode)');
+                                return;
+                            }
+                            restorePurchases();
+                        }}
+                        disabled={isRestoring}
+                    >
+                        <RotateCcw size={16} color={COLORS.textMuted} />
+                        <Text style={styles.restoreText}>
+                            {isRestoring ? 'Restoring...' : 'Restore Purchases'}
+                        </Text>
+                    </Pressable>
                 </View>
             )}
 
@@ -310,7 +433,7 @@ export default function ShopScreen() {
                     </View>
                     <View style={styles.dealPrice}>
                         <Text style={styles.dealOldPrice}>$9.99</Text>
-                        <Pressable style={styles.dealBuyButton}>
+                        <Pressable style={styles.dealBuyButton} onPress={handleDailyDeal}>
                             <Text style={styles.dealBuyText}>$4.99</Text>
                         </Pressable>
                     </View>
@@ -525,6 +648,48 @@ const styles = StyleSheet.create({
     vipButtonText: {
         color: COLORS.background,
         fontWeight: 'bold',
+    },
+    restoreButton: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        paddingVertical: 14,
+        marginTop: 6,
+    },
+    restoreText: {
+        color: COLORS.textMuted,
+        fontSize: 14,
+    },
+    gemPackUnavailable: {
+        backgroundColor: COLORS.surface,
+        borderRadius: 16,
+        padding: 20,
+        alignItems: 'center',
+    },
+    gemPackUnavailableTitle: {
+        color: COLORS.textMuted,
+        fontSize: 16,
+        fontWeight: '600',
+        marginBottom: 6,
+    },
+    gemPackUnavailableDesc: {
+        color: COLORS.textMuted,
+        fontSize: 13,
+        textAlign: 'center',
+        lineHeight: 18,
+    },
+    devBanner: {
+        backgroundColor: '#2d2a00',
+        borderRadius: 8,
+        padding: 8,
+        alignItems: 'center',
+        marginBottom: 8,
+    },
+    devBannerText: {
+        color: '#ffd600',
+        fontSize: 12,
+        fontWeight: '600',
     },
     skinsContainer: {
         gap: 10,

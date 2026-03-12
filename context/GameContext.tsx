@@ -69,7 +69,8 @@ export const [GameProvider, useGame] = createContextHook(() => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const [state, setState] = useState<GameState>(initialGameState);
     const [isLoading, setIsLoading] = useState(true);
-    const [xpMultiplier, setXpMultiplier] = useState(1);
+    const [xpBoostMultiplier, setXpBoostMultiplier] = useState(1);
+    const xpMultiplier = state.isVip ? xpBoostMultiplier * 2 : xpBoostMultiplier;
 
     useEffect(() => {
         void loadGame();
@@ -96,6 +97,18 @@ export const [GameProvider, useGame] = createContextHook(() => {
                     parsed.dailyQuests = createDailyQuests();
                     parsed.coins += Math.min(parsed.loginStreak * 50, 500);
                     parsed.gems += Math.min(parsed.loginStreak, 10);
+
+                    // VIP daily bonus: 50 gems per day
+                    if (parsed.isVip && parsed.vipExpiryDate) {
+                        const expiry = new Date(parsed.vipExpiryDate);
+                        if (expiry > now) {
+                            parsed.gems += 50;
+                        } else {
+                            // VIP expired
+                            parsed.isVip = false;
+                            parsed.vipExpiryDate = null;
+                        }
+                    }
                 }
 
                 setState({ ...initialGameState, ...parsed, lastLogin: now.toISOString() });
@@ -303,8 +316,8 @@ export const [GameProvider, useGame] = createContextHook(() => {
     }, []);
 
     const activateXpBoost = useCallback((multiplier: number, durationMs: number) => {
-        setXpMultiplier(multiplier);
-        setTimeout(() => setXpMultiplier(1), durationMs);
+        setXpBoostMultiplier(multiplier);
+        setTimeout(() => setXpBoostMultiplier(1), durationMs);
     }, []);
 
     const unlockSkin = useCallback((skinId: string) => {
@@ -314,17 +327,34 @@ export const [GameProvider, useGame] = createContextHook(() => {
         }));
     }, []);
 
+    const ALL_SKIN_IDS = ['default', 'golden', 'crystal', 'shadow', 'rainbow'];
+
     const setVipStatus = useCallback((active: boolean, expiryDate?: string) => {
-        setState(prev => ({
-            ...prev,
-            isVip: active,
-            vipExpiryDate: expiryDate || null,
-        }));
+        setState(prev => {
+            if (active && !prev.isVip) {
+                // First-time VIP activation: unlock all skins + grant 100 gems bonus
+                return {
+                    ...prev,
+                    isVip: true,
+                    vipExpiryDate: expiryDate || null,
+                    unlockedSkins: [...new Set([...prev.unlockedSkins, ...ALL_SKIN_IDS])],
+                    gems: prev.gems + 100,
+                };
+            }
+            return {
+                ...prev,
+                isVip: active,
+                vipExpiryDate: expiryDate || null,
+                // If deactivated, keep skins — they were earned
+            };
+        });
     }, []);
 
     const equipSkin = useCallback((skinId: string) => {
         setState(prev => {
-            if (!prev.currentPet || !prev.unlockedSkins.includes(skinId)) return prev;
+            if (!prev.currentPet) return prev;
+            // VIP users can equip any skin; others need it unlocked
+            if (!prev.isVip && !prev.unlockedSkins.includes(skinId)) return prev;
 
             const updatedPet = { ...prev.currentPet, skin: skinId };
             return {

@@ -8,7 +8,6 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { GameProvider } from '@/context/GameContext';
 import { COLORS } from '@/constants/game';
-import { useAndroidSystemUiGuard } from '@/hooks/useAndroidSystemUiGuard';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -17,7 +16,7 @@ const queryClient = new QueryClient();
 function RootLayoutNav() {
     return (
         <View style={styles.container}>
-            <StatusBar style="light" translucent backgroundColor="transparent" />
+            <StatusBar style="light" />
             <Stack
                 screenOptions={{
                     headerShown: false,
@@ -45,8 +44,6 @@ function RootLayoutNav() {
 }
 
 export default function RootLayout() {
-    useAndroidSystemUiGuard();
-
     useEffect(() => {
         void SplashScreen.hideAsync();
     }, []);

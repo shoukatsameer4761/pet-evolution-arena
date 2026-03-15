@@ -3,7 +3,7 @@
     "name": "Pet Evolution Arena",
     "slug": "yic9xbw0esfk7pa665r1c",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/images/icon.png",
     "scheme": "rork-app",
     "userInterfaceStyle": "automatic",
@@ -14,7 +14,7 @@
       "backgroundColor": "#1A1A2E"
     },
     "ios": {
-      "supportsTablet": false,
+      "supportsTablet": true,
       "bundleIdentifier": "app.rork.yic9xbw0esfk7pa665r1c",
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false
@@ -26,7 +26,8 @@
         "backgroundColor": "#1A1A2E"
       },
       "package": "app.rork.yic9xbw0esfk7pa665r1c",
-      "versionCode": 11,
+      "resizeableActivity": true,
+      "versionCode": 12,
       "permissions": [
         "INTERNET",
         "VIBRATE",
@@ -37,6 +38,12 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      [
+        "./plugins/withPlayGames.js",
+        {
+          "appId": "385172338132"
+        }
+      ],
       [
         "expo-router",
         {

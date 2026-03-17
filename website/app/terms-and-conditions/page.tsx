@@ -298,7 +298,7 @@ export default function TermsAndConditionsPage() {
                             <div className="mt-4 p-4 bg-surface-light rounded-xl">
                                 <p className="text-text font-semibold">Pet Evolution Arena</p>
                                 <p className="text-text-muted text-sm mt-1">
-                                    Email: twinklemart95@gmail.com
+                                    Email: ik8052218@gmail.com
                                 </p>
                             </div>
                         </div>
